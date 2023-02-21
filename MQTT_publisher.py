@@ -26,7 +26,6 @@ def connect():
 
 def mqtt_serve(door):
     client = mqtt_connect()
-    #utime.sleep(1)
     client.publish(secrets.topic_pub, msg=door)
     utime.sleep(3)
         
@@ -42,14 +41,12 @@ def reset_pico():
    machine.reset()
 
 led = Pin(28, Pin.OUT)
-btn1 = Button(1)
-btn2 = Button(6)
+sd_btn1 = Button(2)
+sd_btn2 = Button(3)
+ld_btn1 = Button(6)
+ld_btn2 = Button(7)
 btn8 = Button(16)
 led.low()
-#MQTT connection
-#last_message = 0
-#message_interval = 5
-#counter = 0
 client_id = secrets.client_id
 mqtt_server = secrets.mqtt_server
 user_t = secrets.user_t
@@ -65,28 +62,33 @@ while True:
         print("first exeption")
         reset_pico()
     while True:
+        # kill it
         if btn8.is_pressed:
-            # kill it
             reset_pico()
-        elif btn1.is_pressed:
-            door = 'OPEN'
-        elif btn2.is_pressed:
-            door = 'CLOSED'
+
+        # Small Garage Door
+        if sd_btn1.is_pressed:
+            sdoor = 'SD_OPEN'
+        elif sd_btn2.is_pressed:
+            sdoor = 'SD_CLOSED'
         else:
-            door = 'IN MOTION'
+            sdoor = 'SD_IN MOTION'
+
+        # Large Garage Door
+        if ld_btn1.is_pressed:
+            ldoor = 'LD_OPEN'
+        elif ld_btn2.is_pressed:
+            ldoor = 'LD_CLOSED'
+        else:
+            ldoor = 'LD_IN MOTION'
 
         try:
-            client.publish(secrets.topic_pub, msg=door)
-            utime.sleep(3)
+            client.publish(secrets.topic_pub, msg=sdoor)
+            client.publish(secrets.topic_pub, msg=ldoor)
+            utime.sleep(2)
         except:
             print("Client publish failed, executing a soft reset")
             machine.soft_reset()
             pass
     print("client disconnect")
     client.disconnect()
-    
-
-
-
-
-
