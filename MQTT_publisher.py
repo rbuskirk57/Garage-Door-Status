@@ -43,8 +43,8 @@ def reset_pico():
 led = Pin(28, Pin.OUT)
 sd_btn1 = Button(2)
 sd_btn2 = Button(3)
-ld_btn1 = Button(6)
-ld_btn2 = Button(7)
+ld_btn1 = Button(4)
+ld_btn2 = Button(5)
 btn8 = Button(16)
 led.low()
 client_id = secrets.client_id
@@ -52,14 +52,15 @@ mqtt_server = secrets.mqtt_server
 user_t = secrets.user_t
 password_t = secrets.password_t
 
+sensor_temp = machine.ADC(4)
+conversion_factor = 3.3 / (65535)
+
 ip = connect()
 
 while True:
     try:
-        print("First try section")
         client = mqtt_connect()
     except OSError as e:
-        print("first exeption")
         reset_pico()
     while True:
         # kill it
@@ -81,10 +82,16 @@ while True:
             ldoor = 'LD_CLOSED'
         else:
             ldoor = 'LD_IN MOTION'
+            
+        reading = sensor_temp.read_u16() * conversion_factor 
+        temperature_c = 27 - (reading - 0.706)/0.001721
+        fahrenheit_degrees = temperature_c * 9 / 5 + 32
+        Temp_F = "Temp: " + str(round(fahrenheit_degrees,2)) + " *F"
 
         try:
             client.publish(secrets.topic_pub, msg=sdoor)
             client.publish(secrets.topic_pub, msg=ldoor)
+            client.publish(secrets.topic_pub, msg=Temp_F)
             utime.sleep(2)
         except:
             print("Client publish failed, executing a soft reset")
@@ -92,3 +99,10 @@ while True:
             pass
     print("client disconnect")
     client.disconnect()
+    
+
+
+
+
+
+
