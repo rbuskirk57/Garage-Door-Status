@@ -33,17 +33,18 @@ def mqtt_connect():
 def new_message_callback(topic, msg):
     topic , msg=topic.decode('ascii') , msg.decode('ascii')
     print("Topic: "+topic+" | Message: "+msg)
-    if 'SD' in msg:
+    if "SD" in msg:
         print("small " + msg)
         f1 = open("sdoor.txt", 'w')
         f1.write(msg)
         f1.close()
-
-    if 'LD' in msg:
+    elif "LD" in msg:
         print("large " + msg)
         f2 = open("ldoor.txt", 'w')
         f2.write(msg)
         f2.close()
+    else:
+        print("error in callback... msg doesn't match")
 
 def reset_pico():
    print('Failed to connect to the MQTT Broker. Bailing out with a machine reset...')
@@ -51,7 +52,6 @@ def reset_pico():
    machine.reset()
 
 def s_door_up(): #green on
-    #green.on()
     s_green.toggle()
     s_red.off()
     s_yellow.off()
@@ -67,19 +67,16 @@ def s_door_in_motion(): # yellow toggle
     s_yellow.toggle()
 
 def l_door_up(): #green on
-    #print("l green on")
     l_green.toggle()
     l_red.off()
     l_yellow.off()
 
 def l_door_down(): # red on
-    #print("l red on")
     l_red.on()
     l_green.off()
     l_yellow.off()
 
 def l_door_in_motion(): # yellow toggle
-    #print("l yellow on")
     l_red.off()
     l_green.off()
     l_yellow.toggle()
@@ -88,11 +85,9 @@ led = Pin(28, Pin.OUT) #WiFi connected
 s_red = LED(19, Pin.OUT) #closed
 s_green = LED(17, Pin.OUT) #open
 s_yellow = LED(18, Pin.OUT) #in motion
-
 l_red = LED(14, Pin.OUT) #closed
 l_green = LED(13, Pin.OUT) #open
 l_yellow = LED(12, Pin.OUT) #in motion
-
 
 btn8 = Button(16)
 led.low()
@@ -151,16 +146,24 @@ while True:
         else:
             l_door_in_motion()
 
-
         client.check_msg()
-        utime.sleep(2)
+        utime.sleep(1)
         if (utime.time() - last_message) > keep_alive:
               client.publish(topic_pub, "Keep alive message")
               last_message = utime.time()
 
     except OSError as e:
         print(e)
-        #reset_pico()
+        reset_pico()
         pass
 
 client.disconnect()
+
+    
+
+
+
+
+
+
+
