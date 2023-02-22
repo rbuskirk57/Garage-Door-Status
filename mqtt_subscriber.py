@@ -33,14 +33,14 @@ def mqtt_connect():
 def new_message_callback(topic, msg):
     topic , msg=topic.decode('ascii') , msg.decode('ascii')
     print("Topic: "+topic+" | Message: "+msg)
-    print(msg[0:2])
+    #print(msg[0:2])
     if msg[0:2] == "SD":
-        print("small " + msg)
+        #print("small " + msg)
         f1 = open("sdoor.txt", 'w')
         f1.write(msg)
         f1.close()
     elif msg[0:2] == "LD":
-        print("large " + msg)
+        #print("large " + msg)
         f2 = open("ldoor.txt", 'w')
         f2.write(msg)
         f2.close()
@@ -126,8 +126,8 @@ while True:
         ld_status = f2.read()
         f2.close()
         
-        print("SD_STAT: " + sd_status)
-        print("LD_STAT: " + ld_status)
+        #print("SD_STAT: " + sd_status)
+        #print("LD_STAT: " + ld_status)
         
         if btn8.is_pressed:
             # kill it
@@ -148,7 +148,7 @@ while True:
             l_door_in_motion()
 
         client.check_msg()
-        utime.sleep(1)
+        utime.sleep(0.1)
         if (utime.time() - last_message) > keep_alive:
               client.publish(topic_pub, "Keep alive message")
               last_message = utime.time()
