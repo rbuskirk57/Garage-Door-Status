@@ -33,35 +33,67 @@ def mqtt_connect():
 def new_message_callback(topic, msg):
     topic , msg=topic.decode('ascii') , msg.decode('ascii')
     print("Topic: "+topic+" | Message: "+msg)
-    f = open("Temp.txt", 'w')
-    f.write(msg)
-    f.close()
+    if 'SD' in msg:
+        print("small " + msg)
+        f1 = open("sdoor.txt", 'w')
+        f1.write(msg)
+        f1.close()
+
+    if 'LD' in msg:
+        print("large " + msg)
+        f2 = open("ldoor.txt", 'w')
+        f2.write(msg)
+        f2.close()
 
 def reset_pico():
    print('Failed to connect to the MQTT Broker. Bailing out with a machine reset...')
    utime.sleep(5)
    machine.reset()
 
-def door_up(): #green on
-    green.on()
-    red.off()
-    yellow.off()
+def s_door_up(): #green on
+    #green.on()
+    s_green.toggle()
+    s_red.off()
+    s_yellow.off()
 
-def door_down(): # red on
-    red.on()
-    green.off()
-    yellow.off()
+def s_door_down(): # red on
+    s_red.on()
+    s_green.off()
+    s_yellow.off()
 
-def door_in_motion(): # yellow toggle
-    red.off()
-    green.off()
-    yellow.toggle()
+def s_door_in_motion(): # yellow toggle
+    s_red.off()
+    s_green.off()
+    s_yellow.toggle()
 
+def l_door_up(): #green on
+    #print("l green on")
+    l_green.toggle()
+    l_red.off()
+    l_yellow.off()
+
+def l_door_down(): # red on
+    #print("l red on")
+    l_red.on()
+    l_green.off()
+    l_yellow.off()
+
+def l_door_in_motion(): # yellow toggle
+    #print("l yellow on")
+    l_red.off()
+    l_green.off()
+    l_yellow.toggle()
 
 led = Pin(28, Pin.OUT) #WiFi connected
-red = LED(17, Pin.OUT) #closed
-green = LED(21, Pin.OUT) #open
-yellow = LED(18, Pin.OUT) #in motion
+s_red = LED(19, Pin.OUT) #closed
+s_green = LED(17, Pin.OUT) #open
+s_yellow = LED(18, Pin.OUT) #in motion
+
+l_red = LED(14, Pin.OUT) #closed
+l_green = LED(13, Pin.OUT) #open
+l_yellow = LED(12, Pin.OUT) #in motion
+
+
 btn8 = Button(16)
 led.low()
 client_id = secrets.client_id
@@ -69,7 +101,7 @@ mqtt_server = secrets.mqtt_server
 user_t = secrets.user_t
 password_t = secrets.password_t
 topic_pub = secrets.topic_pub
-status = "one"
+
 ip = connect()
 
 # the following will set the seconds between 2 keep alive messages
@@ -90,39 +122,45 @@ mssg = client.check_msg()
 # Main loop
 while True:
     try:
-        f = open("Temp.txt")
-        status = f.read()
-        f.close()
-        print(status)
+        f1 = open("sdoor.txt")
+        sd_status = f1.read()
+        f1.close()
+        
+        f2 = open("ldoor.txt")
+        ld_status = f2.read()
+        f2.close()
+        
+        print("SD_STAT: " + sd_status)
+        print("LD_STAT: " + ld_status)
+        
         if btn8.is_pressed:
             # kill it
             reset_pico()
-        if status == 'OPEN': #open
-            door_up()
-            print('green')
-        elif status == 'CLOSED': #closed
-            print('red')
-            door_down()
+
+        if sd_status == 'SD_OPEN': #open
+            s_door_up()
+        elif sd_status == 'SD_CLOSED': #closed
+            s_door_down()
         else:
-            print('yellow')
-            door_in_motion()
+            s_door_in_motion()
+
+        if ld_status == 'LD_OPEN': #open
+            l_door_up()
+        elif ld_status == 'LD_CLOSED': #closed
+            l_door_down()
+        else:
+            l_door_in_motion()
+
+
         client.check_msg()
-        utime.sleep(1)
+        utime.sleep(2)
         if (utime.time() - last_message) > keep_alive:
               client.publish(topic_pub, "Keep alive message")
               last_message = utime.time()
 
     except OSError as e:
         print(e)
-        reconnect()
+        #reset_pico()
         pass
 
 client.disconnect()
-
-    
-
-
-
-
-
-
