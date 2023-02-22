@@ -33,19 +33,16 @@ def mqtt_connect():
 def new_message_callback(topic, msg):
     topic , msg=topic.decode('ascii') , msg.decode('ascii')
     print("Topic: "+topic+" | Message: "+msg)
-    #print(msg[0:2])
     if msg[0:2] == "SD":
-        #print("small " + msg)
-        f1 = open("sdoor.txt", 'w')
-        f1.write(msg)
-        f1.close()
+        f = open("sdoor.txt", 'w')
+        f.write(msg)
+        f.close()
     elif msg[0:2] == "LD":
-        #print("large " + msg)
-        f2 = open("ldoor.txt", 'w')
-        f2.write(msg)
-        f2.close()
+        f = open("ldoor.txt", 'w')
+        f.write(msg)
+        f.close()
     else:
-        print("error in callback... msg doesn't match")
+        print("Just a heads-up ... msg in callback didn't match: " + msg)
 
 def reset_pico():
    print('Failed to connect to the MQTT Broker. Bailing out with a machine reset...')
@@ -118,16 +115,13 @@ mssg = client.check_msg()
 # Main loop
 while True:
     try:
-        f1 = open("sdoor.txt")
-        sd_status = f1.read()
-        f1.close()
+        f = open("sdoor.txt")
+        sd_status = f.read()
+        f.close()
         
-        f2 = open("ldoor.txt")
-        ld_status = f2.read()
-        f2.close()
-        
-        #print("SD_STAT: " + sd_status)
-        #print("LD_STAT: " + ld_status)
+        f = open("ldoor.txt")
+        ld_status = f.read()
+        f.close()
         
         if btn8.is_pressed:
             # kill it
