@@ -33,12 +33,13 @@ def mqtt_connect():
 def new_message_callback(topic, msg):
     topic , msg=topic.decode('ascii') , msg.decode('ascii')
     print("Topic: "+topic+" | Message: "+msg)
-    if "SD" in msg:
+    print(msg[0:2])
+    if msg[0:2] == "SD":
         print("small " + msg)
         f1 = open("sdoor.txt", 'w')
         f1.write(msg)
         f1.close()
-    elif "LD" in msg:
+    elif msg[0:2] == "LD":
         print("large " + msg)
         f2 = open("ldoor.txt", 'w')
         f2.write(msg)
