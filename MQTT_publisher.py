@@ -85,7 +85,7 @@ while True:
             
         reading = sensor_temp.read_u16() * conversion_factor 
         temperature_c = 27 - (reading - 0.706)/0.001721
-        fahrenheit_degrees = temperature_c * 9 / 5 + 32
+        fahrenheit_degrees = temperature_c * (9 / 5) + 32
         Temp_F = "Temp: " + str(round(fahrenheit_degrees,2)) + " *F"
 
         try:
@@ -100,7 +100,6 @@ while True:
     print("client disconnect")
     client.disconnect()
     
-
 
 
 
