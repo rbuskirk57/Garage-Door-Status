@@ -40,12 +40,12 @@ def reset_pico():
    utime.sleep(5)
    machine.reset()
 
-led = Pin(28, Pin.OUT)
+led = Pin(15, Pin.OUT)
 sd_btn1 = Button(2)
 sd_btn2 = Button(3)
 ld_btn1 = Button(4)
 ld_btn2 = Button(5)
-btn8 = Button(16)
+btn_reset = Button(17)
 led.low()
 client_id = secrets.client_id
 mqtt_server = secrets.mqtt_server
@@ -64,7 +64,7 @@ while True:
         reset_pico()
     while True:
         # kill it
-        if btn8.is_pressed:
+        if btn_reset.is_pressed:
             reset_pico()
 
         # Small Garage Door
@@ -92,7 +92,7 @@ while True:
             client.publish(secrets.topic_pub, msg=sdoor)
             client.publish(secrets.topic_pub, msg=ldoor)
             client.publish(secrets.topic_pub, msg=Temp_F)
-            utime.sleep(2)
+            utime.sleep(1)
         except:
             print("Client publish failed, executing a soft reset")
             machine.soft_reset()
@@ -100,6 +100,7 @@ while True:
     print("client disconnect")
     client.disconnect()
     
+
 
 
 
