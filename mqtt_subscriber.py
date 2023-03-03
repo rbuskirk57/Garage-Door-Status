@@ -1,5 +1,6 @@
 import network
 import secrets
+import mqtt_params
 import socket
 from time import sleep
 from picozero import pico_temp_sensor, pico_led, Button, LED
@@ -41,6 +42,10 @@ def new_message_callback(topic, msg):
         f = open("ldoor.txt", 'w')
         f.write(msg)
         f.close()
+    elif msg[0:2] == "Te":
+        f = open("temp.txt", 'w')
+        f.write(msg)
+        f.close()
     else:
         print("Just a heads-up ... msg in callback didn't match: " + msg)
 
@@ -80,20 +85,20 @@ def l_door_in_motion(): # yellow toggle
     l_yellow.toggle()
 
 led = Pin(28, Pin.OUT) #WiFi connected
-s_red = LED(19, Pin.OUT) #closed
-s_green = LED(17, Pin.OUT) #open
-s_yellow = LED(18, Pin.OUT) #in motion
+s_red = LED(20, Pin.OUT) #closed
+s_green = LED(18, Pin.OUT) #open
+s_yellow = LED(19, Pin.OUT) #in motion
 l_red = LED(14, Pin.OUT) #closed
 l_green = LED(13, Pin.OUT) #open
 l_yellow = LED(12, Pin.OUT) #in motion
 
-btn8 = Button(16)
+btn8 = Button(17)
 led.low()
-client_id = secrets.client_id
-mqtt_server = secrets.mqtt_server
-user_t = secrets.user_t
-password_t = secrets.password_t
-topic_pub = secrets.topic_pub
+client_id = mqtt_params.client_id
+mqtt_server = mqtt_params.mqtt_server
+user_t = mqtt_params.user_t
+password_t = mqtt_params.password_t
+topic_pub = mqtt_params.topic_pub
 
 ip = connect()
 
@@ -121,6 +126,10 @@ while True:
         
         f = open("ldoor.txt")
         ld_status = f.read()
+        f.close()
+        
+        f = open("temp.txt")
+        temp_f = f.read()
         f.close()
         
         if btn8.is_pressed:
@@ -155,7 +164,6 @@ while True:
 client.disconnect()
 
     
-
 
 
 
