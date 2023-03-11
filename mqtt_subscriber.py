@@ -18,8 +18,9 @@ def connect():
     wlan.connect(secrets.SSID, secrets.PASSWORD)
     while wlan.isconnected() == False:
         print('Waiting for connection...')
+        led.toggle()
         sleep(1)
-    led.toggle()
+    #led.toggle()
     utime.sleep(1)
     ip = wlan.ifconfig()[0]
     print(f'Connected on {ip}')
@@ -38,16 +39,25 @@ def new_message_callback(topic, msg):
         f = open("sdoor.txt", 'w')
         f.write(msg)
         f.close()
+        wrt_sysok("1")
     elif msg[0:2] == "LD":
         f = open("ldoor.txt", 'w')
         f.write(msg)
         f.close()
+        wrt_sysok("1")
     elif msg[0:2] == "Te":
         f = open("temp.txt", 'w')
         f.write(msg)
         f.close()
+        wrt_sysok("1")
     else:
         print("Just a heads-up ... msg in callback didn't match: " + msg)
+        wrt_sysok("0")
+
+def wrt_sysok(status):
+    f = open("sysok.txt", "w")
+    f.write(status)
+    f.close()
 
 def reset_pico():
    print('Failed to connect to the MQTT Broker. Bailing out with a machine reset...')
@@ -93,14 +103,16 @@ l_green = LED(13, Pin.OUT) #open
 l_yellow = LED(12, Pin.OUT) #in motion
 
 btn8 = Button(17)
-led.low()
+#led.low()
 client_id = mqtt_params.client_id
 mqtt_server = mqtt_params.mqtt_server
 user_t = mqtt_params.user_t
 password_t = mqtt_params.password_t
 topic_pub = mqtt_params.topic_pub
+count = 0
 
 ip = connect()
+led.on()
 
 # the following will set the seconds between 2 keep alive messages
 keep_alive=30
@@ -132,6 +144,10 @@ while True:
         temp_f = f.read()
         f.close()
         
+        f = open("sysok.txt")
+        sys_ok = f.read()
+        f.close()
+        
         if btn8.is_pressed:
             # kill it
             reset_pico()
@@ -150,6 +166,14 @@ while True:
         else:
             l_door_in_motion()
 
+        if sys_ok == "1":
+            count = 0
+            led.on()
+        else:
+            count = count + 1
+            if count > 500:
+                led.toggle()
+        
         client.check_msg()
         utime.sleep(0.1)
         if (utime.time() - last_message) > keep_alive:
