@@ -1,5 +1,6 @@
 import network
 import secrets
+import mqtt_pub_params
 import socket
 from time import sleep
 from picozero import pico_temp_sensor, pico_led, Button
@@ -26,7 +27,7 @@ def connect():
 
 def mqtt_serve(door):
     client = mqtt_connect()
-    client.publish(secrets.topic_pub, msg=door)
+    client.publish(mqtt_pub_params.topic_pub, msg=door)
     utime.sleep(3)
         
 def mqtt_connect():
@@ -47,10 +48,10 @@ ld_btn1 = Button(4)
 ld_btn2 = Button(5)
 btn_reset = Button(17)
 led.low()
-client_id = secrets.client_id
-mqtt_server = secrets.mqtt_server
-user_t = secrets.user_t
-password_t = secrets.password_t
+client_id = mqtt_pub_params.client_id
+mqtt_server = mqtt_pub_params.mqtt_server
+user_t = mqtt_pub_params.user_t
+password_t = mqtt_pub_params.password_t
 
 sensor_temp = machine.ADC(4)
 conversion_factor = 3.3 / (65535)
@@ -89,18 +90,17 @@ while True:
         Temp_F = "Temp: " + str(round(fahrenheit_degrees,2)) + " *F"
 
         try:
-            client.publish(secrets.topic_pub, msg=sdoor)
-            client.publish(secrets.topic_pub, msg=ldoor)
-            client.publish(secrets.topic_pub, msg=Temp_F)
+            client.publish(mqtt_pub_params.topic_pub, msg=sdoor)
+            client.publish(mqtt_pub_params.topic_pub, msg=ldoor)
+            client.publish(mqtt_pub_params.topic_pub, msg=Temp_F)
             utime.sleep(1)
         except:
-            print("Client publish failed, executing a soft reset")
-            machine.soft_reset()
+            print("Client publish failed, executing a machine reset")
+            reset_pico()
             pass
     print("client disconnect")
     client.disconnect()
     
-
 
 
 
