@@ -14,7 +14,7 @@ def connect():
     wlan = network.WLAN(network.STA_IF)
     wlan.active(True)
     # set static IP - put this in the secrets file for future)
-    wlan.ifconfig(('192.168.2.168', '255.255.255.0', '192.168.2.1', '8.8.8.8'))
+    wlan.ifconfig(('192.168.40.58', '255.255.252.0', '192.168.42.1', '8.8.8.8'))
     wlan.connect(secrets.SSID, secrets.PASSWORD)
     while wlan.isconnected() == False:
         print('Waiting for connection...')
