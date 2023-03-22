@@ -15,7 +15,7 @@ def connect():
     wlan.active(True)
     max_count = 20
     # set static IP - put this in the secrets file for future)
-    wlan.ifconfig(('192.168.2.185', '255.255.255.0', '192.168.2.1', '8.8.8.8'))
+    wlan.ifconfig(('192.168.40.57', '255.255.252.0', '192.168.42.1', '8.8.8.8'))
     wlan.connect(secrets.SSID, secrets.PASSWORD)
     
     while max_count > 0:
