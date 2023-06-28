@@ -1,6 +1,7 @@
-import network
+#import network
 import secrets
 import mqtt_pub_params
+import net_connect
 import socket
 from time import sleep
 from picozero import pico_temp_sensor, pico_led, Button
@@ -8,35 +9,6 @@ from machine import Pin
 import utime
 import machine
 from umqttsimple import MQTTClient
-
-def connect():
-    #Connect to WLAN
-    wlan = network.WLAN(network.STA_IF)
-    wlan.active(True)
-    max_count = 20
-    # set static IP - put this in the secrets file for future)
-    wlan.ifconfig(('192.168.40.57', '255.255.252.0', '192.168.42.1', '8.8.8.8'))
-    wlan.connect(secrets.SSID, secrets.PASSWORD)
-    
-    while max_count > 0:
-        led.off()
-        print('Waiting for connection...')
-        sleep(1)
-        if wlan.isconnected():
-            ip = wlan.ifconfig()[0]
-            led.on()
-            print(f'Connected on {ip}')
-            break
-        else:
-            max_count -= 1
-
-    if not wlan.isconnected():
-        f = open("pub_log.txt", 'a')
-        f.write("Network connection failed" + '\r\n')
-        f.close()
-        print("Network connection failed")
-        reset_pico()
-    return ip
 
 def mqtt_serve(door):
     client = mqtt_connect()
@@ -51,8 +23,6 @@ def mqtt_connect():
 
 def reset_pico():
    print('Failed to connect to the MQTT Broker. Bailing out with a machine soft reset...')
-   #utime.sleep(5)
-   #machine.reset()
    # Using the soft_reset is an experitment to see if I can improve recovery
    # when the Pico loses WiFi connection.
    led.off()
@@ -73,15 +43,16 @@ password_t = mqtt_pub_params.password_t
 sensor_temp = machine.ADC(4)
 conversion_factor = 3.3 / (65535)
 
-ip = connect()
+ip = net_connect.connect(secrets.SSID, secrets.PASSWORD)
+if ip != "-1":
+    led.on()
+else:
+    reset_pico()
 
 while True:
     try:
         client = mqtt_connect()
     except OSError as e:
-        f = open("pub_log.txt", 'a')
-        f.write(str(e) + '\r\n')
-        f.close()
         reset_pico()
     while True:
         # kill it
@@ -116,9 +87,6 @@ while True:
             utime.sleep(1)
         except:
             print("Client publish failed, executing a machine reset")
-            f = open("pub_log.txt", 'a')
-            f.write("Client publish failed " + '\r\n')
-            f.close()
             reset_pico()
             pass
     print("client disconnect")
