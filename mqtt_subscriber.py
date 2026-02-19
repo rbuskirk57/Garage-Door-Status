@@ -7,7 +7,7 @@ from picozero import pico_temp_sensor, pico_led, Button, LED
 from machine import Pin
 import utime
 import machine
-from umqttsimple import MQTTClient
+from umqtt.robust import MQTTClient
 
 def connect():
     #Connect to WLAN
