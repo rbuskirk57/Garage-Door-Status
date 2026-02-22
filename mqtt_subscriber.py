@@ -1,6 +1,7 @@
 import network
 import secrets
 import mqtt_params
+import net_connect
 import socket
 from time import sleep
 from picozero import pico_temp_sensor, pico_led, Button, LED
@@ -8,23 +9,6 @@ from machine import Pin
 import utime
 import machine
 from umqtt.robust import MQTTClient
-
-def connect():
-    #Connect to WLAN
-    wlan = network.WLAN(network.STA_IF)
-    wlan.active(True)
-    # set static IP - put this in the secrets file for future)
-    wlan.ifconfig(('192.168.40.58', '255.255.252.0', '192.168.42.1', '8.8.8.8'))
-    wlan.connect(secrets.SSID, secrets.PASSWORD)
-    while wlan.isconnected() == False:
-        print('Waiting for connection...')
-        led.toggle()
-        sleep(1)
-    #led.toggle()
-    utime.sleep(1)
-    ip = wlan.ifconfig()[0]
-    print(f'Connected on {ip}')
-    return ip
 
 def mqtt_connect():
     client = MQTTClient(client_id, mqtt_server, user=user_t, password=password_t, keepalive=30)
@@ -34,7 +18,7 @@ def mqtt_connect():
 # This code is executed once a new message is published
 def new_message_callback(topic, msg):
     topic , msg=topic.decode('ascii') , msg.decode('ascii')
-    print("Topic: "+topic+" | Message: "+msg)
+    #print("Topic: "+topic+" | Message: "+msg)
     if msg[0:2] == "SD":
         f = open("sdoor.txt", 'w')
         f.write(msg)
@@ -50,6 +34,8 @@ def new_message_callback(topic, msg):
         f.write(msg)
         f.close()
         wrt_sysok("1")
+    elif msg == "Keep alive message":
+        wrt_sysok("0")
     else:
         print("Just a heads-up ... msg in callback didn't match: " + msg)
         wrt_sysok("0")
@@ -103,7 +89,6 @@ l_green = LED(13, Pin.OUT) #open
 l_yellow = LED(12, Pin.OUT) #in motion
 
 btn8 = Button(17)
-#led.low()
 client_id = mqtt_params.client_id
 mqtt_server = mqtt_params.mqtt_server
 user_t = mqtt_params.user_t
@@ -111,8 +96,11 @@ password_t = mqtt_params.password_t
 topic_pub = mqtt_params.topic_pub
 count = 0
 
-ip = connect()
-led.on()
+ip = net_connect.connect(secrets.SSID, secrets.PASSWORD)
+if ip != "-1":
+    led.on()
+else:
+    reset_pico()
 
 # the following will set the seconds between 2 keep alive messages
 keep_alive=30
@@ -129,8 +117,14 @@ last_message=utime.time()
 
 mssg = client.check_msg()
 
+wlan = network.WLAN(network.STA_IF)
+
 # Main loop
 while True:
+    if not wlan.isconnected():
+        print("Network connection failed")
+        led.toggle()
+        
     try:
         f = open("sdoor.txt")
         sd_status = f.read()
@@ -187,7 +181,7 @@ while True:
 
 client.disconnect()
 
-    
+
 
 
 
