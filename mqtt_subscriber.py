@@ -8,47 +8,41 @@ from picozero import pico_temp_sensor, pico_led, Button, LED
 from machine import Pin
 import utime
 import machine
-from umqtt.robust import MQTTClient
+from umqttsimple import MQTTClient
+
+# do I need this?
+sd_status = ""
+ld_status = ""
 
 def mqtt_connect():
     client = MQTTClient(client_id, mqtt_server, user=user_t, password=password_t, keepalive=30)
     client.connect()
+    print(client)
     print('Connected to %s MQTT Broker'%(mqtt_server))
     return client
+
 # This code is executed once a new message is published
 def new_message_callback(topic, msg):
+    global sd_status
+    global ld_status
+    global temp_f
     topic , msg=topic.decode('ascii') , msg.decode('ascii')
     #print("Topic: "+topic+" | Message: "+msg)
     if msg[0:2] == "SD":
-        f = open("sdoor.txt", 'w')
-        f.write(msg)
-        f.close()
-        wrt_sysok("1")
+        sd_status = msg
     elif msg[0:2] == "LD":
-        f = open("ldoor.txt", 'w')
-        f.write(msg)
-        f.close()
-        wrt_sysok("1")
+        ld_status = msg
     elif msg[0:2] == "Te":
-        f = open("temp.txt", 'w')
-        f.write(msg)
-        f.close()
-        wrt_sysok("1")
-    elif msg == "Keep alive message":
-        wrt_sysok("0")
+        temp_f = msg
     else:
         print("Just a heads-up ... msg in callback didn't match: " + msg)
-        wrt_sysok("0")
-
-def wrt_sysok(status):
-    f = open("sysok.txt", "w")
-    f.write(status)
-    f.close()
 
 def reset_pico():
    print('Failed to connect to the MQTT Broker. Bailing out with a machine reset...')
-   utime.sleep(5)
-   machine.reset()
+   #utime.sleep(5)
+   #machine.reset()
+   led.off()
+   machine.soft_reset()
 
 def s_door_up(): #green on
     s_green.toggle()
@@ -96,7 +90,7 @@ password_t = mqtt_params.password_t
 topic_pub = mqtt_params.topic_pub
 count = 0
 
-ip = net_connect.connect(secrets.SSID, secrets.PASSWORD)
+ip = net_connect.connect(secrets.SSID, secrets.PASSWORD, 10)
 if ip != "-1":
     led.on()
 else:
@@ -126,48 +120,32 @@ while True:
         led.toggle()
         
     try:
-        f = open("sdoor.txt")
-        sd_status = f.read()
-        f.close()
-        
-        f = open("ldoor.txt")
-        ld_status = f.read()
-        f.close()
-        
-        f = open("temp.txt")
-        temp_f = f.read()
-        f.close()
-        
-        f = open("sysok.txt")
-        sys_ok = f.read()
-        f.close()
-        
         if btn8.is_pressed:
             # kill it
             reset_pico()
-
+        count += 1
+        
+        #print(sd_status, ld_status, count)
+        
+        # 
         if sd_status == 'SD_OPEN': #open
             s_door_up()
         elif sd_status == 'SD_CLOSED': #closed
             s_door_down()
-        else:
+        elif sd_status == 'SD_IN MOTION':
             s_door_in_motion()
+        else:
+            pass
 
         if ld_status == 'LD_OPEN': #open
             l_door_up()
         elif ld_status == 'LD_CLOSED': #closed
             l_door_down()
-        else:
+        elif ld_status == 'LD_IN MOTION':
             l_door_in_motion()
-
-        if sys_ok == "1":
-            count = 0
-            led.on()
         else:
-            count = count + 1
-            if count > 500:
-                led.toggle()
-        
+            pass
+
         client.check_msg()
         utime.sleep(0.1)
         if (utime.time() - last_message) > keep_alive:
@@ -180,6 +158,8 @@ while True:
         pass
 
 client.disconnect()
+
+    
 
 
 
