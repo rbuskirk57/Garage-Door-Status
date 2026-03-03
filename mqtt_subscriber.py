@@ -10,9 +10,10 @@ import utime
 import machine
 from umqttsimple import MQTTClient
 
-# do I need this?
+# Initialize Globals
 sd_status = ""
 ld_status = ""
+test_sub = ""
 
 def mqtt_connect():
     client = MQTTClient(client_id, mqtt_server, user=user_t, password=password_t, keepalive=30)
@@ -26,12 +27,15 @@ def new_message_callback(topic, msg):
     global sd_status
     global ld_status
     global temp_f
+    global test_sub
     topic , msg=topic.decode('ascii') , msg.decode('ascii')
     #print("Topic: "+topic+" | Message: "+msg)
     if msg[0:2] == "SD":
         sd_status = msg
     elif msg[0:2] == "LD":
         ld_status = msg
+    elif msg == "test":
+        test_sub = msg
     elif msg[0:2] == "Te":
         temp_f = msg
     else:
@@ -39,8 +43,6 @@ def new_message_callback(topic, msg):
 
 def reset_pico():
    print('Failed to connect to the MQTT Broker. Bailing out with a machine reset...')
-   #utime.sleep(5)
-   #machine.reset()
    led.off()
    machine.soft_reset()
 
@@ -73,6 +75,14 @@ def l_door_in_motion(): # yellow toggle
     l_red.off()
     l_green.off()
     l_yellow.toggle()
+    
+def test(): # toggle leds when message "test" is published
+    l_green.toggle()
+    s_green.toggle()
+    l_yellow.toggle()
+    s_yellow.toggle()
+    s_red.toggle()
+    l_red.toggle()
 
 led = Pin(28, Pin.OUT) #WiFi connected
 s_red = LED(20, Pin.OUT) #closed
@@ -89,6 +99,9 @@ user_t = mqtt_params.user_t
 password_t = mqtt_params.password_t
 topic_pub = mqtt_params.topic_pub
 count = 0
+
+sensor_temp = machine.ADC(4)
+conversion_factor = 3.3 / (65535)
 
 ip = net_connect.connect(secrets.SSID, secrets.PASSWORD, 10)
 if ip != "-1":
@@ -123,8 +136,7 @@ while True:
         if btn8.is_pressed:
             # kill it
             reset_pico()
-        count += 1
-        
+        #count += 1
         #print(sd_status, ld_status, count)
         
         # 
@@ -145,12 +157,23 @@ while True:
             l_door_in_motion()
         else:
             pass
+        
+        if test_sub == 'test':
+            test()
+            test_sub = 'off'
+        else:
+            pass
 
         client.check_msg()
         utime.sleep(0.1)
         if (utime.time() - last_message) > keep_alive:
-              client.publish(topic_pub, "Keep alive message")
-              last_message = utime.time()
+            # Read Pico temp and report it with keep alive
+            reading = sensor_temp.read_u16() * conversion_factor 
+            temperature_c = 27 - (reading - 0.706)/0.001721
+            fahrenheit_degrees = temperature_c * (9 / 5) + 32
+            Temp_F = "Temp: " + str(round(fahrenheit_degrees,2)) + " *F"
+            client.publish(topic_pub, "Publisher Keep alive message: " + Temp_F)
+            last_message = utime.time()
 
     except OSError as e:
         print(e)
